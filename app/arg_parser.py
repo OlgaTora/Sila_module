@@ -45,6 +45,8 @@ class ArgParser:
     def check_disk_service(self):
         check_service = self.subparsers.add_parser('check_disk', help='Проверка диска',
                                                    description='Проверка одного диска на вероятность выхода из строя')
+        # subsubparsers = check_service.add_subparsers(help='sub-services help')
+
         check_service.set_defaults(func=self.check_disk_health)
         # arguments for check_disc_service
         check_service.add_argument('-a', '--param_a',

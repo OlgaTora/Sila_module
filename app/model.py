@@ -1,6 +1,5 @@
 from sklearn import linear_model
 import pickle
-import os
 from sklearn.datasets import load_iris
 import pandas as pd
 
@@ -14,12 +13,9 @@ class ModelClassification:
 
     def load_data_(self, params):
         """Функция для загрузки данных из пути, указанного при вызове сервиса train"""
-        try:
-            os.chdir(params[0])
-            self.df = determinate_file_or_dir(params)
+        self.df = determinate_file_or_dir(params)
+        if self.df is not None:
             print('Данные загружены')
-        except FileNotFoundError:
-            print("Загрузите файл в директорию")
         self.df = load_iris(as_frame=True).frame
         return self.df
 
