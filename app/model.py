@@ -1,6 +1,7 @@
 from sklearn import linear_model
 import pickle
 from sklearn.datasets import load_iris
+import pandas as pd
 
 
 # try:
