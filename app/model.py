@@ -4,23 +4,24 @@ from sklearn.datasets import load_iris
 import pandas as pd
 
 
-# try:
-#     df = pd.read_csv("_______", delimiter=",")
-# except FileNotFoundError:
-#     print("You have to load the file to the directory before opening it.")
-
 class ModelClassification:
 
     def __init__(self):
         self.df = None
 
-    def load_data_(self):
-        # тут загрузка данных из консоли
+    def load_data_(self, params):
+        """Функция для загрузки данных из пути, указанного при вызове сервиса train"""
+        path, delimiter = params
+        try:
+            self.df = pd.read_csv(path, delimiter=delimiter)
+            print('Data is load')
+        except FileNotFoundError:
+            print("Загрузите файл в директорию")
         self.df = load_iris(as_frame=True).frame
         return self.df
 
-    def preprocessing_(self):
-        self.df = self.load_data_()
+    def preprocessing_(self, params):
+        self.df = self.load_data_(params)
         self.df['target'] = self.df.target.apply(lambda x: 1 if x == 2 else 0)
         return self.df
 
@@ -36,8 +37,8 @@ class ModelClassification:
         )
         return model
 
-    def save_trained_model(self):
-        self.df = self.preprocessing_()
+    def save_trained_model(self, params):
+        self.df = self.preprocessing_(params)
         X, y = self.split_()
         model = self.init_model_()
         model.fit(X, y)

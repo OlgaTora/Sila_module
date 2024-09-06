@@ -10,11 +10,12 @@ class ArgParser:
         self.parser = argparse.ArgumentParser(prog='check disk module',
                                               description="Утилита для предсказания по дискам,\
                                       установленным в серверах, для выдачи прогноза их выхода из строя.")
-        self.subparsers = self.parser.add_subparsers()
+        self.subparsers = self.parser.add_subparsers(help='sub-services help')
 
     def train_model(self):
+        params = self.arguments.path_to_file, self.arguments.delimeter
         model = ModelClassification()
-        model.save_trained_model()
+        model.save_trained_model(params)
         print("Model've trained")
 
     def check_disk_health(self):
@@ -28,13 +29,22 @@ class ArgParser:
         print("Disk health done")
 
     def train_model_service(self):
-        train_service = self.subparsers.add_parser('train_model')
+        train_service = self.subparsers.add_parser('train_model', help='Обучение модели',
+                                                   description='Обучение модели на данных из указанного файла или директории')
         train_service.set_defaults(func=self.train_model)
         # arguments for train_model service
-        ### path to data
+        train_service.add_argument('-p', '--path_to_file',
+                                   help='Путь к файлу или директории с данными для обучения модели',
+                                   required=True,
+                                   type=str)
+        train_service.add_argument('-d', '--delimeter',
+                                   help='Разделитель для csv - файла. По умолчанию ;',
+                                   default=';'
+                                   )
 
     def check_disk_service(self):
-        check_service = self.subparsers.add_parser('check_disk')
+        check_service = self.subparsers.add_parser('check_disk', help='Проверка диска',
+                                                   description='Проверка одного диска на вероятность выхода из строя')
         check_service.set_defaults(func=self.check_disk_health)
         # arguments for check_disc_service
         check_service.add_argument('-a', '--param_a',
