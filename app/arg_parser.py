@@ -56,11 +56,14 @@ class ArgParser:
                                    )
 
     def check_disc_service(self):
-        check_service = self.subparsers.add_parser('check', help='Проверка диска',
-                                                   description='Проверка одного диска на вероятность выхода из строя')
+        check_service = self.subparsers.add_parser('check', help='Проверка дисков',
+                                                   description='Проверка одного или нескольких дисков на вероятность\
+                                                    выхода из строя')
         sub_subparsers = check_service.add_subparsers(help='sub-services help')
 
-        check_one_disc = sub_subparsers.add_parser('one_disc')
+        check_one_disc = sub_subparsers.add_parser('one_disc', help='Проверка одного диска',
+                                                   description='Проверка одного диска на вероятность выхода из строя,\
+                                                    ввод параметров из cli')
         check_one_disc.set_defaults(func=self.check_disc_health)
         # arguments for check one disc
         check_one_disc.add_argument('-a', '--param_a',
@@ -80,7 +83,9 @@ class ArgParser:
                                     required=True,
                                     type=int)
 
-        check_discs = sub_subparsers.add_parser('discs')
+        check_discs = sub_subparsers.add_parser('discs', help='Проверка нескольких дисков',
+                                                description='Проверка дисков, загруженных в виде файла .csv,\
+                                                 на вероятность выхода из строя')
         check_discs.set_defaults(func=self.check_discs_health)
 
         # arguments for check discs from file
