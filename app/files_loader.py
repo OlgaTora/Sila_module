@@ -38,3 +38,10 @@ def determinate_file_or_dir(params: tuple) -> pd.DataFrame | None:
     else:
         print("Данные не загружены. Проверьте указанный путь.")
     return df
+
+
+def get_X_test_from_params(disc_params: tuple):
+    X_test = pd.DataFrame(disc_params).T
+    X_test.columns = ['sepal length (cm)', 'sepal width (cm)', 'petal length (cm)',
+                      'petal width (cm)']
+    return X_test

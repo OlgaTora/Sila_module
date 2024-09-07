@@ -1,7 +1,6 @@
 from sklearn import linear_model
 import pickle
 from sklearn.datasets import load_iris
-import pandas as pd
 
 from files_loader import determinate_file_or_dir
 
@@ -31,12 +30,14 @@ class ModelClassification:
 
     @staticmethod
     def init_model_():
+        """Функция инициализирующая модель"""
         model = linear_model.LogisticRegression(
             solver="liblinear", random_state=123, class_weight="balanced"
         )
         return model
 
     def save_trained_model(self, params):
+        """Функция тренировки и сохранения модели"""
         self.df = self.preprocessing_(params)
         X, y = self.split_()
         model = self.init_model_()
@@ -46,11 +47,8 @@ class ModelClassification:
             pickle.dump(model, file)
 
     @staticmethod
-    def get_prediction(disc_params):
+    def get_prediction(X_test):
         pkl_filename = "model.pkl"
-        X_test = pd.DataFrame(disc_params).T
-        X_test.columns = ['sepal length (cm)', 'sepal width (cm)', 'petal length (cm)',
-                          'petal width (cm)']
         with open(pkl_filename, 'rb') as file:
             model = pickle.load(file)
         prediction = model.predict(X_test)
