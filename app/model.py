@@ -1,8 +1,19 @@
-from sklearn import linear_model
 import pickle
-from sklearn.datasets import load_iris
+import warnings
 
+from sklearn.impute import SimpleImputer
+from sksurv.util import Surv
+
+from data_transform import append_period_col
+
+warnings.filterwarnings("ignore")
 from files_loader import determinate_file_or_dir
+import pandas as pd
+from sklearn.preprocessing import StandardScaler, OneHotEncoder
+from sklearn.pipeline import Pipeline
+from sklearn.compose import ColumnTransformer
+from sklearn.model_selection import train_test_split
+from sksurv.ensemble import RandomSurvivalForest
 
 
 class ModelClassification:
@@ -10,38 +21,68 @@ class ModelClassification:
     def __init__(self):
         self.df = None
 
-    def load_data_(self, params):
+    def __load_data(self, params):
+        print(params)
         """Функция для загрузки данных из пути, указанного при вызове сервиса train"""
         self.df = determinate_file_or_dir(params)
         if self.df is not None:
             print('Данные загружены')
-        self.df = load_iris(as_frame=True).frame
         return self.df
 
-    def preprocessing_(self, params):
-        self.df = self.load_data_(params)
-        self.df['target'] = self.df.target.apply(lambda x: 1 if x == 2 else 0)
+    def __preprocessing(self, params):
+        self.df = self.__load_data(params)
+        self.df = append_period_col(self.df)
+        threshold = len(self.df) * 0.5
+        self.df = self.df.dropna(axis=1, thresh=threshold)
+        # print(self.df.columns)
+        self.df = self.df.loc[:, self.df.nunique() > 1]
+        # print(self.df.columns)
+        # удалить корреоирующие столбцы еще
+        self.df.drop(columns=['serial_number', 'date'], axis=1, inplace=True)
         return self.df
-
-    def split_(self):
-        X = self.df.drop(["target"], axis=1)
-        y = self.df["target"]
-        return X, y
 
     @staticmethod
-    def init_model_():
-        """Функция инициализирующая модель"""
-        model = linear_model.LogisticRegression(
-            solver="liblinear", random_state=123, class_weight="balanced"
-        )
-        return model
+    def get_preprocessor(X: pd.DataFrame):
+        preprocessor = ColumnTransformer(
+            transformers=[
+                ('num', Pipeline(steps=[
+                    ('imputer', SimpleImputer(strategy='constant', fill_value=0)),
+                    ('scaler', StandardScaler())
+                ]), X.select_dtypes(include="number").columns),
+
+                ('cat', Pipeline(steps=[
+                    ('encoder', OneHotEncoder(handle_unknown='ignore'))
+                ]), X.select_dtypes(exclude="number").columns)
+            ])
+        return preprocessor
+
+    def get_pipeline(self, X: pd.DataFrame):
+        preprocessor = self.get_preprocessor(X)
+        pipeline = Pipeline(steps=[
+            ('preprocessor', preprocessor),
+            ('model', RandomSurvivalForest(n_estimators=50, random_state=42))
+        ])
+
+        return pipeline
+
+    def __split(self):
+        y = self.df[['failure', 'days_between']]
+        y['failure'] = y['failure'].astype('bool')
+        X = self.df.drop(columns=['failure', 'days_between'])
+        return X, y
 
     def save_trained_model(self, params):
-        """Функция тренировки и сохранения модели"""
-        self.df = self.preprocessing_(params)
-        X, y = self.split_()
-        model = self.init_model_()
-        model.fit(X, y)
+        self.df = self.__preprocessing(params)
+        print(self.df.columns)
+        X, y = self.__split()
+        pipeline = self.get_pipeline(X)
+        X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+        y_train_surv = Surv.from_dataframe('failure', 'days_between', y_train)
+        # y_test_surv = Surv.from_dataframe('failure', 'days_between', y_test)
+
+        # Обучение модели
+        model = pipeline.fit(X_train, y_train_surv)
+        # model.fit(X, y)
         model_pkl_file = "model.pkl"
         with open(model_pkl_file, 'wb') as file:
             pickle.dump(model, file)

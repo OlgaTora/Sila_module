@@ -88,7 +88,7 @@ class ArgParser:
                                                  на вероятность выхода из строя')
         check_discs.set_defaults(func=self.check_discs_health)
 
-        # arguments for check discs from file
+        # Аргументы для списка дисков в файле
         check_discs.add_argument('-p', '--path_to_file',
                                  help='Путь к файлу или директории с данными для обучения модели',
                                  required=True,
@@ -99,12 +99,19 @@ class ArgParser:
                                  )
 
     def parse(self):
+        """Функция для получения данных из cli с обработкой ошибок."""
         self.train_model_service()
         self.check_disc_service()
         try:
             self.arguments = self.parser.parse_args()
-            self.arguments.func()
+            if hasattr(self.arguments, 'func'):
+                self.arguments.func()
+            else:
+                self.parser.print_help()
         except SystemExit as e:
-            log_msg = 'Проверьте количество аргументов, обратитесь к "--help"'
-            print(log_msg)
-            logger.error(f'{e}: {log_msg}')
+            if e.code != 0:
+                log_msg = 'Проверьте количество аргументов, обратитесь к "--help"'
+                print(log_msg)
+        # except Exception as e:
+        #     log_msg = f'Произошла ошибка: {e}'
+        #     print(log_msg)
