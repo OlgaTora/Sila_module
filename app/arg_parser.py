@@ -16,8 +16,8 @@ class ArgParser:
     def train_model(self):
         params = self.arguments.path_to_file, self.arguments.delimeter
         model = ModelClassification()
-        model.save_trained_model(params)
-        print("Model've trained")
+        score = model.save_trained_model(params)
+        print(f"Model've trained\nscore={score}")
 
     def check_disc_health(self):
         params = (self.arguments.param_a,
@@ -33,9 +33,8 @@ class ArgParser:
     def check_discs_health(self):
         params = self.arguments.path_to_file, self.arguments.delimeter
         model = ModelClassification()
-        data = file_read(*params)
         try:
-            pred = model.get_prediction(data)
+            pred = model.get_prediction(params)
             print(pred)
         except ValueError:
             print('Файл не соответствует необходимому')

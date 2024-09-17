@@ -1,9 +1,11 @@
 import pickle
 import warnings
 
+import numpy as np
 from sklearn.impute import SimpleImputer
 from sksurv.util import Surv
 
+from SETTINGS import PERIOD
 from data_transform import append_period_col
 
 warnings.filterwarnings("ignore")
@@ -33,10 +35,8 @@ class ModelClassification:
         self.df = self.__load_data(params)
         self.df = append_period_col(self.df)
         threshold = len(self.df) * 0.5
-        self.df = self.df.dropna(axis=1, thresh=threshold)
-        # print(self.df.columns)
-        self.df = self.df.loc[:, self.df.nunique() > 1]
-        # print(self.df.columns)
+        # self.df = self.df.dropna(axis=1, thresh=threshold)
+        # self.df = self.df.loc[:, self.df.nunique() > 1]
         # удалить корреоирующие столбцы еще
         self.df.drop(columns=['serial_number', 'date'], axis=1, inplace=True)
         return self.df
@@ -73,24 +73,38 @@ class ModelClassification:
 
     def save_trained_model(self, params):
         self.df = self.__preprocessing(params)
-        print(self.df.columns)
         X, y = self.__split()
         pipeline = self.get_pipeline(X)
-        X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
-        y_train_surv = Surv.from_dataframe('failure', 'days_between', y_train)
+        # X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+        y_surv = Surv.from_dataframe('failure', 'days_between', y)
         # y_test_surv = Surv.from_dataframe('failure', 'days_between', y_test)
 
-        # Обучение модели
-        model = pipeline.fit(X_train, y_train_surv)
-        # model.fit(X, y)
+        model = pipeline.fit(X, y_surv)
+        train_score = model.score(X, y_surv)
         model_pkl_file = "model.pkl"
         with open(model_pkl_file, 'wb') as file:
             pickle.dump(model, file)
+        return train_score
 
-    @staticmethod
-    def get_prediction(X_test):
+    def get_prediction(self, params):
         pkl_filename = "model.pkl"
         with open(pkl_filename, 'rb') as file:
             model = pickle.load(file)
-        prediction = model.predict(X_test)
-        return prediction[0]
+        self.df = self.__preprocessing(params)
+        X_test, y_test = self.__split()
+        pred = model.predict_survival_function(X_test)
+        data = []
+        for i in range(len(pred)):
+            for t in PERIOD:
+                data.append({
+                    'index': i,
+                    'Time': t,
+                    'Survival Probability': pred[i](t)
+                })
+        res = pd.DataFrame(data)
+        res_ = pd.DataFrame(y_test).reset_index()
+        result = pd.merge(res, res_, on='index')
+        return result
+
+# model = ModelClassification()
+# model.get_prediction(('/home/olgatorres/PycharmProjects/Sila_module/app/test_data/1.csv', ','))
