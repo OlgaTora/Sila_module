@@ -1,6 +1,5 @@
 import argparse
 
-from files_loader import get_X_test_from_params, file_read
 from model import ModelClassification
 from logger import logger
 
@@ -8,94 +7,73 @@ from logger import logger
 class ArgParser:
     def __init__(self):
         self.arguments = None
-        self.parser = argparse.ArgumentParser(prog='check disk module',
-                                              description="Утилита для предсказания по дискам,\
-                                      установленным в серверах, для выдачи прогноза их выхода из строя.")
-        self.subparsers = self.parser.add_subparsers(help='sub-services help')
+        self.parser = argparse.ArgumentParser(
+            prog="check disk module",
+            description="Утилита для предсказания по дискам,\
+                                      установленным в серверах, для выдачи прогноза их выхода из строя.",
+        )
+        self.subparsers = self.parser.add_subparsers(help="sub-services help")
 
     def train_model(self):
         params = self.arguments.path_to_file, self.arguments.delimeter
         model = ModelClassification()
         score = model.save_trained_model(params)
-        print(f"Model've trained\nscore={score}")
-
-    def check_disc_health(self):
-        params = (self.arguments.param_a,
-                  self.arguments.param_b,
-                  self.arguments.param_c,
-                  self.arguments.param_d)
-        model = ModelClassification()
-        data = get_X_test_from_params(params)
-        pred = model.get_prediction(data)
-        print('Disk is good') if pred == 1 else print('Disk is not healthy')
-        print("Disk health done")
+        print(f"Модель обучена,\nscore на тренировочной выборке={score}")
 
     def check_discs_health(self):
         params = self.arguments.path_to_file, self.arguments.delimeter
         model = ModelClassification()
         try:
             pred = model.get_prediction(params)
-            print(pred)
+            print(f"Получен результат:\n{pred}")
         except ValueError:
-            print('Файл не соответствует необходимому')
+            print("Файл не соответствует необходимому")
         print("Disk health done")
 
     def train_model_service(self):
-        train_service = self.subparsers.add_parser('train_model', help='Обучение модели',
-                                                   description='Обучение модели на данных из указанного файла или директории')
+        train_service = self.subparsers.add_parser(
+            "train_model",
+            help="Обучение модели",
+            description="Обучение модели на данных из указанного файла или директории",
+        )
         train_service.set_defaults(func=self.train_model)
-        # arguments for train_model service
-        train_service.add_argument('-p', '--path_to_file',
-                                   help='Путь к файлу или директории с данными для обучения модели',
-                                   required=True,
-                                   type=str)
-        train_service.add_argument('-d', '--delimeter',
-                                   help='Разделитель для csv - файла. По умолчанию ;',
-                                   default=';'
-                                   )
+
+        train_service.add_argument(
+            "-p",
+            "--path_to_file",
+            help="Путь к файлу или директории с данными для обучения модели",
+            required=True,
+            type=str,
+        )
+        train_service.add_argument(
+            "-d",
+            "--delimeter",
+            help="Разделитель для csv - файла. По умолчанию ,",
+            default=",",
+        )
 
     def check_disc_service(self):
-        check_service = self.subparsers.add_parser('check', help='Проверка дисков',
-                                                   description='Проверка одного или нескольких дисков на вероятность\
-                                                    выхода из строя')
-        sub_subparsers = check_service.add_subparsers(help='sub-services help')
+        check_service = self.subparsers.add_parser(
+            "check",
+            help="Проверка дисков",
+            description="Проверка одного или нескольких дисков на вероятность\
+                                                    выхода из строя",
+        )
+        check_service.set_defaults(func=self.check_discs_health)
 
-        check_one_disc = sub_subparsers.add_parser('one_disc', help='Проверка одного диска',
-                                                   description='Проверка одного диска на вероятность выхода из строя,\
-                                                    ввод параметров из cli')
-        check_one_disc.set_defaults(func=self.check_disc_health)
-        # arguments for check one disc
-        check_one_disc.add_argument('-a', '--param_a',
-                                    help='Disc parameters',
-                                    required=True,
-                                    type=int)
-        check_one_disc.add_argument('-b', '--param_b',
-                                    help='Disc parameters',
-                                    required=True,
-                                    type=int)
-        check_one_disc.add_argument('-c', '--param_c',
-                                    help='Disc parameters',
-                                    required=True,
-                                    type=int)
-        check_one_disc.add_argument('-d', '--param_d',
-                                    help='Disc parameters',
-                                    required=True,
-                                    type=int)
-
-        check_discs = sub_subparsers.add_parser('discs', help='Проверка нескольких дисков',
-                                                description='Проверка дисков, загруженных в виде файла .csv,\
-                                                 на вероятность выхода из строя')
-        check_discs.set_defaults(func=self.check_discs_health)
-
-        # Аргументы для списка дисков в файле
-        check_discs.add_argument('-p', '--path_to_file',
-                                 help='Путь к файлу или директории с данными для обучения модели',
-                                 required=True,
-                                 type=str)
-        check_discs.add_argument('-d', '--delimeter',
-                                 help='Разделитель для csv - файла. По умолчанию ;',
-                                 default=';'
-                                 )
+        check_service.add_argument(
+            "-p",
+            "--path_to_file",
+            help="Путь к файлу или директории с данными для обучения модели",
+            required=True,
+            type=str,
+        )
+        check_service.add_argument(
+            "-d",
+            "--delimeter",
+            help="Разделитель для csv - файла. По умолчанию ,",
+            default=",",
+        )
 
     def parse(self):
         """Функция для получения данных из cli с обработкой ошибок."""
@@ -103,7 +81,7 @@ class ArgParser:
         self.check_disc_service()
         try:
             self.arguments = self.parser.parse_args()
-            if hasattr(self.arguments, 'func'):
+            if hasattr(self.arguments, "func"):
                 self.arguments.func()
             else:
                 self.parser.print_help()
@@ -111,6 +89,6 @@ class ArgParser:
             if e.code != 0:
                 log_msg = 'Проверьте количество аргументов, обратитесь к "--help"'
                 print(log_msg)
-        # except Exception as e:
-        #     log_msg = f'Произошла ошибка: {e}'
-        #     print(log_msg)
+        except Exception as e:
+            log_msg = f"Произошла ошибка: {e}"
+            print(log_msg)

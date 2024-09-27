@@ -6,7 +6,7 @@ from sklearn.impute import SimpleImputer
 from sksurv.util import Surv
 
 from SETTINGS import PERIOD
-from data_transform import append_period_col
+from data_transform import append_period_col, append_disc_type
 
 warnings.filterwarnings("ignore")
 from files_loader import determinate_file_or_dir
@@ -28,17 +28,13 @@ class ModelClassification:
         """Функция для загрузки данных из пути, указанного при вызове сервиса train"""
         self.df = determinate_file_or_dir(params)
         if self.df is not None:
-            print('Данные загружены')
+            print('Данные загружены успешно')
         return self.df
 
     def __preprocessing(self, params):
         self.df = self.__load_data(params)
         self.df = append_period_col(self.df)
-        threshold = len(self.df) * 0.5
-        # self.df = self.df.dropna(axis=1, thresh=threshold)
-        # self.df = self.df.loc[:, self.df.nunique() > 1]
-        # удалить корреоирующие столбцы еще
-        self.df.drop(columns=['serial_number', 'date'], axis=1, inplace=True)
+        self.df = append_disc_type(self.df)
         return self.df
 
     @staticmethod
@@ -60,7 +56,9 @@ class ModelClassification:
         preprocessor = self.get_preprocessor(X)
         pipeline = Pipeline(steps=[
             ('preprocessor', preprocessor),
-            ('model', RandomSurvivalForest(n_estimators=50, random_state=42))
+            ('model', RandomSurvivalForest(
+                max_depth=7, n_estimators=120, random_state=1234, n_jobs=-1, min_samples_leaf=2,
+                min_samples_split=5))
         ])
 
         return pipeline
@@ -68,7 +66,16 @@ class ModelClassification:
     def __split(self):
         y = self.df[['failure', 'days_between']]
         y['failure'] = y['failure'].astype('bool')
-        X = self.df.drop(columns=['failure', 'days_between'])
+        X = self.df[
+            [
+                "smart_1_raw",
+                "smart_9_raw",
+                "smart_5_raw",
+                "smart_12_raw",
+                "smart_194_raw",
+                "type"
+            ]
+        ]
         return X, y
 
     def save_trained_model(self, params):
@@ -102,7 +109,7 @@ class ModelClassification:
                     'Survival Probability': pred[i](t)
                 })
         res = pd.DataFrame(data)
-        res_ = pd.DataFrame(y_test).reset_index()
+        res_ = pd.DataFrame(self.df.serial_number).reset_index()
         result = pd.merge(res, res_, on='index')
         return result
 
