@@ -29,7 +29,6 @@ def file_read(path: str, delimiter: str) -> pd.DataFrame | None:
         df = pd.read_csv(path, delimiter=delimiter, encoding="unicode_escape")
         df = reduce_data(df)
         df = pd.concat([df.loc[df.failure == 1], df.sample(10)], ignore_index=True)
-        print(df)
         return df
     except FileNotFoundError:
         print("Загрузите файл в директорию")

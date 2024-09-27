@@ -8,11 +8,12 @@ def reduce_data(df):
     # df.drop_duplicates(inplace=True)
     df = df.drop(df.filter(regex="normalized$").columns, axis=1)  # raw
     num_features = df.select_dtypes(include="number")
-    for el in num_features:
-        for n_type in (np.int32, np.int16, np.int8):
-            if df[el].isna().sum() == 0:
-                if (df[el] == df[el].astype(n_type)).sum() == len(df):
-                    df[el] = df[el].astype(n_type)
+    for col in num_features:
+        df[col] = df[col].astype(np.float64)
+    #     for n_type in (np.int32, np.int16, np.int8):
+    #         if df[el].isna().sum() == 0:
+    #             if (df[el] == df[el].astype(n_type)).sum() == len(df):
+    #                 df[el] = df[el].astype(n_type)
     return df
 
 
@@ -30,5 +31,4 @@ def append_period_col(df):
     df["days_between"] = df.groupby("serial_number")["date"].transform(
         lambda x: (x.max() - first_date).days
     )
-    # print(df.columns)
     return df

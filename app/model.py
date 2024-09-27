@@ -1,21 +1,20 @@
 import pickle
 import warnings
+import pandas as pd
 
-import numpy as np
 from sklearn.impute import SimpleImputer
 from sksurv.util import Surv
-
-from SETTINGS import PERIOD
-from data_transform import append_period_col, append_disc_type
-
-warnings.filterwarnings("ignore")
-from files_loader import determinate_file_or_dir
-import pandas as pd
 from sklearn.preprocessing import StandardScaler, OneHotEncoder
 from sklearn.pipeline import Pipeline
 from sklearn.compose import ColumnTransformer
 from sklearn.model_selection import train_test_split
 from sksurv.ensemble import RandomSurvivalForest
+
+from SETTINGS import PERIOD
+from data_transform import append_period_col, append_disc_type
+from files_loader import determinate_file_or_dir
+
+warnings.filterwarnings("ignore")
 
 
 class ModelClassification:
@@ -24,7 +23,6 @@ class ModelClassification:
         self.df = None
 
     def __load_data(self, params):
-        print(params)
         """Функция для загрузки данных из пути, указанного при вызове сервиса train"""
         self.df = determinate_file_or_dir(params)
         if self.df is not None:
@@ -99,19 +97,17 @@ class ModelClassification:
             model = pickle.load(file)
         self.df = self.__preprocessing(params)
         X_test, y_test = self.__split()
+        print(X_test.info())
         pred = model.predict_survival_function(X_test)
         data = []
         for i in range(len(pred)):
             for t in PERIOD:
                 data.append({
                     'index': i,
-                    'Time': t,
-                    'Survival Probability': pred[i](t)
+                    'Time': 'month' if t == 30 else ('quarter' if t == 90 else 'year'),
+                    'Survival': 'true' if pred[i](t) > 0.5 else 'false'
                 })
         res = pd.DataFrame(data)
         res_ = pd.DataFrame(self.df.serial_number).reset_index()
         result = pd.merge(res, res_, on='index')
         return result
-
-# model = ModelClassification()
-# model.get_prediction(('/home/olgatorres/PycharmProjects/Sila_module/app/test_data/1.csv', ','))
