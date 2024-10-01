@@ -6,3 +6,5 @@ docker run -it --name sila sila
 
 При повторных использованиях:
 docker start -i sila
+
+https://ru.wikipedia.org/wiki/S.M.A.R.T.

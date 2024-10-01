@@ -34,10 +34,10 @@ def file_read(path: str, delimiter: str) -> pd.DataFrame | None:
         print("Загрузите файл в директорию")
 
 
-def determinate_file_or_dir(params: tuple) -> pd.DataFrame | None:
+def determinate_file_or_dir(path: str, delimiter: str) -> pd.DataFrame | None:
     """Функция определяющая файл или директория и обращающаяся к соответствующим функциям загрузки данных"""
     df = None
-    path, delimiter = params
+    # path, delimiter = params
     if path.endswith("csv"):
         df = file_read(path, delimiter)
     elif os.path.isdir(path):
