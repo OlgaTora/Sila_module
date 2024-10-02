@@ -74,7 +74,9 @@ class ModelClassification:
             [
                 "smart_1_raw",
                 "smart_9_raw",
+                "smart_3_raw",
                 "smart_5_raw",
+                "smart_198_raw",
                 "smart_12_raw",
                 "smart_194_raw",
                 "type"

@@ -3,6 +3,8 @@ import os
 import pandas as pd
 
 from tqdm import tqdm
+
+from SETTINGS import SERIAL_NUMBERS
 from data_transform import reduce_data
 
 
@@ -28,7 +30,8 @@ def file_read(path: str, delimiter: str) -> pd.DataFrame | None:
         gc.collect()
         df = pd.read_csv(path, delimiter=delimiter, encoding="unicode_escape")
         df = reduce_data(df)
-        df = pd.concat([df.loc[df.failure == 1], df.sample(10)], ignore_index=True)
+        #  если данные с сайта blakblaze
+        # df = data_from_blakblaze(df)
         return df
     except FileNotFoundError:
         print("Загрузите файл в директорию")
@@ -47,4 +50,10 @@ def determinate_file_or_dir(path: str, delimiter: str) -> pd.DataFrame | None:
     return df
 
 
-# determinate_file_or_dir(('/home/olgatorres/PycharmProjects/Sila_module/app/test_data/2.csv', ','))
+def data_from_blakblaze(df):
+    """Если необходимо использовать данные с сайта blakblaze"""
+    serial_nums = pd.read_csv(SERIAL_NUMBERS)
+    df = df[df.serial_number.isin(serial_nums['0'])]
+    df = pd.concat([df.loc[df.failure == 1], df.loc[df.failure == 0].sample(15)])
+    return df
+

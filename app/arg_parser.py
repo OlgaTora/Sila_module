@@ -12,7 +12,7 @@ class ArgParser:
             description="Утилита для предсказания по дискам,\
                                       установленным в серверах, для выдачи прогноза их выхода из строя.",
         )
-        self.subparsers = self.parser.add_subparsers(help="sub-services help")
+        self.subparsers = self.parser.add_subparsers()
 
     def train_model(self):
         params = (self.arguments.path_to_file,
