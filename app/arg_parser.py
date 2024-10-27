@@ -110,5 +110,5 @@ class ArgParser:
                 log_msg = 'Проверьте количество аргументов, обратитесь к "--help"'
                 print(log_msg)
         except Exception as e:
-            log_msg = f"Произошла ошибка: {e}"
+            log_msg = f"Произошла ошибка: {e} "
             print(log_msg)
